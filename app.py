@@ -4,7 +4,7 @@ import random
 # 1. DIZAJN I BOJE (Konfiguracija)
 st.set_page_config(page_title="BetGen AI", page_icon="⚽", layout="centered")
 
-# Custom CSS za Dark Mode i neon zelenu boju
+# Ispravljen CSS (dodat unsafe_allow_html)
 st.markdown("""
     <style>
     .stApp { background-color: #0E1117; color: #FFFFFF; }
@@ -14,13 +14,12 @@ st.markdown("""
         width: 100%; height: 50px;
     }
     .stTextInput>div>div>input { background-color: #1A1C23; color: white; border: 1px solid #00FF41; }
-    .stHeader { color: #00FF41; }
     </style>
-    """, unsafe_allow_status=True)
+    """, unsafe_allow_html=True)
 
 # 2. LOGO I NASLOV
-st.markdown("<h1 style='text-align: center; color: #00FF41;'>⚡ BetGen AI</h1>", unsafe_allow_status=True)
-st.markdown("<p style='text-align: center;'>Generacija pametnog klađenja</p>", unsafe_allow_status=True)
+st.markdown("<h1 style='text-align: center; color: #00FF41;'>⚡ BetGen AI</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center;'>Generacija pametnog klađenja</p>", unsafe_allow_html=True)
 
 # 3. GLAVNE FUNKCIJE
 tab1, tab2 = st.tabs(["🔍 Analiza Meča", "🍀 Srećni Tiket"])
@@ -36,7 +35,6 @@ with tab1:
     grad = st.text_input("Grad (za vremensku prognozu)", "Beograd")
     
     if st.button("POKRENI AI ANALIZU"):
-        # Simulacija naše logike
         prognoza = random.choice(["1", "X", "2", "GG", "0-2"])
         poverenje = random.randint(65, 95)
         st.success(f"🤖 Analiza završena! Tip: **{prognoza}** (Poverenje: {poverenje}%)")
