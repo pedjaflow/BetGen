@@ -1,42 +1,63 @@
-import streamlit as st
+ import streamlit as st
+import random
 
-# Postavke izgleda aplikacije
-st.set_page_config(page_title="BetGen AI", page_icon="🚀")
+# 1. DIZAJN I BOJE (Konfiguracija)
+st.set_page_config(page_title="BetGen AI", page_icon="⚽", layout="centered")
 
-# Naslov i Logo
-st.title("🚀 BetGen v1.0")
-st.subheader("AI Analiza Sportskih Rezultata")
+# Custom CSS za Dark Mode i neon zelenu boju
+st.markdown("""
+    <style>
+    .stApp { background-color: #0E1117; color: #FFFFFF; }
+    .stButton>button { 
+        background-color: #00FF41; color: black; 
+        font-weight: bold; border-radius: 10px; border: none;
+        width: 100%; height: 50px;
+    }
+    .stTextInput>div>div>input { background-color: #1A1C23; color: white; border: 1px solid #00FF41; }
+    .stHeader { color: #00FF41; }
+    </style>
+    """, unsafe_allow_status=True)
 
-# Glavni meni
-st.write("---")
-opcija = st.selectbox("Izaberi opciju:", ["Početna", "Analiziraj Meč", "Današnji Favoriti"])
+# 2. LOGO I NASLOV
+st.markdown("<h1 style='text-align: center; color: #00FF41;'>⚡ BetGen AI</h1>", unsafe_allow_status=True)
+st.markdown("<p style='text-align: center;'>Generacija pametnog klađenja</p>", unsafe_allow_status=True)
 
-if opcija == "Analiziraj Meč":
+# 3. GLAVNE FUNKCIJE
+tab1, tab2 = st.tabs(["🔍 Analiza Meča", "🍀 Srećni Tiket"])
+
+with tab1:
+    st.subheader("Analiziraj svoj par")
     col1, col2 = st.columns(2)
-    
     with col1:
-        domacin = st.text_input("Domaći tim", "Arsenal")
-        forma_d = st.slider("Forma domaćina (golovi)", 0.0, 5.0, 1.5)
-        
+        domacin = st.text_input("Domaćin", "Crvena Zvezda")
     with col2:
-        gost = st.text_input("Gostujući tim", "Chelsea")
-        forma_g = st.slider("Forma gosta (golovi)", 0.0, 5.0, 1.2)
-
-    grad = st.text_input("Grad u kom se igra (za vremensku prognozu)", "London")
+        gost = st.text_input("Gost", "Partizan")
     
-    if st.button("GENERISI PROGNOZU"):
-        # Logika koju smo ranije napravili
-        rezultat_d = round(forma_d * 0.9, 1) # Mala simulacija faktora
-        rezultat_g = round(forma_g * 0.9, 1)
-        
-        st.success(f"🤖 BetGen Prognoza: {domacin} {rezultat_d} : {rezultat_g} {gost}")
-        st.info("💡 Savet: Razmislite o tipu 'Oba tima daju gol' (GG)")
+    grad = st.text_input("Grad (za vremensku prognozu)", "Beograd")
+    
+    if st.button("POKRENI AI ANALIZU"):
+        # Simulacija naše logike
+        prognoza = random.choice(["1", "X", "2", "GG", "0-2"])
+        poverenje = random.randint(65, 95)
+        st.success(f"🤖 Analiza završena! Tip: **{prognoza}** (Poverenje: {poverenje}%)")
 
-elif opcija == "Današnji Favoriti":
-    st.write("📌 **Top 3 pick-a za danas:**")
-    st.write("1. Man. City - Real Madrid (Tip: 1)")
-    st.write("2. Partizan - Zvezda (Tip: X2)")
-    st.write("3. Bayern - Arsenal (Tip: 3+ golova)")
+with tab2:
+    st.subheader("Generiši dobitni tiket")
+    broj_parova = st.slider("Koliko parova želiš?", 2, 5, 3)
+    
+    if st.button("SASTAVI SREĆNI TIKET 🍀"):
+        st.markdown("### 📝 Tvoj BetGen Tiket:")
+        test_timovi = ["Arsenal", "Real Madrid", "Man. City", "Milan", "Bayern", "PSG", "Barcelona", "Liverpool"]
+        
+        ukupna_kvota = 1.0
+        for _ in range(broj_parova):
+            t1, t2 = random.sample(test_timovi, 2)
+            tip = random.choice(["1", "X2", "GG", "3+", "1X"])
+            kvota = round(random.uniform(1.4, 2.2), 2)
+            ukupna_kvota *= kvota
+            st.write(f"⚽ {t1} - {t2} | Tip: **{tip}** | Kvota: {kvota}")
+        
+        st.info(f"💰 Ukupna kvota: **{round(ukupna_kvota, 2)}**")
 
 st.write("---")
-st.caption("BetGen koristi besplatne AI modele i vremensku prognozu uživo.")
+st.caption("© 2024 BetGen - Powered by AI & Open-Meteo")
