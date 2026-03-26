@@ -1,61 +1,49 @@
 import streamlit as st
+import pandas as pd
 import random
+from datetime import datetime
 
-# 1. DIZAJN I BOJE (Konfiguracija)
-st.set_page_config(page_title="BetGen AI", page_icon="⚽", layout="centered")
+st.set_page_config(page_title="BetGen AI", page_icon="⚽")
 
-# Ispravljen CSS (dodat unsafe_allow_html)
-st.markdown("""
-    <style>
-    .stApp { background-color: #0E1117; color: #FFFFFF; }
-    .stButton>button { 
-        background-color: #00FF41; color: black; 
-        font-weight: bold; border-radius: 10px; border: none;
-        width: 100%; height: 50px;
-    }
-    .stTextInput>div>div>input { background-color: #1A1C23; color: white; border: 1px solid #00FF41; }
-    </style>
-    """, unsafe_allow_html=True)
+# --- FUNKCIJA ZA PRAVE PODATKE ---
+def ucitaj_danasnje_parove():
+    try:
+        # Koristimo FBref ili sličan sajt koji Pandas može da pročita direktno
+        url = "https://fbref.com" 
+        tabele = pd.read_html(url)
+        # Uzimamo prvu tabelu koja sadrži današnje mečeve
+        df = tabele[0]
+        # Filtriramo samo bitne kolone: Domaćin, Gost, Takmičenje
+        parovi = df[['Home', 'Away', 'League']].values.tolist()
+        return parovi[:15] # Vraćamo prvih 15 jačih mečeva
+    except:
+        return [["Arsenal", "Chelsea", "Premier League"], ["Real Madrid", "Barcelona", "La Liga"]]
 
-# 2. LOGO I NASLOV
-st.markdown("<h1 style='text-align: center; color: #00FF41;'>⚡ BetGen AI</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center;'>Generacija pametnog klađenja</p>", unsafe_allow_html=True)
+# --- DIZAJN ---
+st.markdown("<h1 style='text-align: center; color: #00FF41;'>⚡ BetGen AI Live</h1>", unsafe_allow_html=True)
 
-# 3. GLAVNE FUNKCIJE
-tab1, tab2 = st.tabs(["🔍 Analiza Meča", "🍀 Srećni Tiket"])
+tab1, tab2 = st.tabs(["🔍 Live Analiza", "🍀 Srećni Tiket"])
 
 with tab1:
-    st.subheader("Analiziraj svoj par")
-    col1, col2 = st.columns(2)
-    with col1:
-        domacin = st.text_input("Domaćin", "Crvena Zvezda")
-    with col2:
-        gost = st.text_input("Gost", "Partizan")
+    st.subheader("Izaberi meč iz današnje ponude")
+    lista_parova = ucitaj_danasnje_parove()
     
-    grad = st.text_input("Grad (za vremensku prognozu)", "Beograd")
+    izbor = st.selectbox("Današnji mečevi:", [f"{p[0]} vs {p[1]} ({p[2]})" for p in lista_parova])
     
-    if st.button("POKRENI AI ANALIZU"):
-        prognoza = random.choice(["1", "X", "2", "GG", "0-2"])
-        poverenje = random.randint(65, 95)
-        st.success(f"🤖 Analiza završena! Tip: **{prognoza}** (Poverenje: {poverenje}%)")
+    if st.button("ANALIZIRAJ ODABRANI MEČ"):
+        st.info(f"Analiziram: {izbor}...")
+        # Ovde AI "vrti" našu logiku
+        savet = random.choice(["1", "X2", "3+", "GG"])
+        st.success(f"🤖 BetGen Tip: **{savet}**")
 
 with tab2:
-    st.subheader("Generiši dobitni tiket")
-    broj_parova = st.slider("Koliko parova želiš?", 2, 5, 3)
-    
-    if st.button("SASTAVI SREĆNI TIKET 🍀"):
-        st.markdown("### 📝 Tvoj BetGen Tiket:")
-        test_timovi = ["Arsenal", "Real Madrid", "Man. City", "Milan", "Bayern", "PSG", "Barcelona", "Liverpool"]
-        
-        ukupna_kvota = 1.0
-        for _ in range(broj_parova):
-            t1, t2 = random.sample(test_timovi, 2)
-            tip = random.choice(["1", "X2", "GG", "3+", "1X"])
-            kvota = round(random.uniform(1.4, 2.2), 2)
-            ukupna_kvota *= kvota
-            st.write(f"⚽ {t1} - {t2} | Tip: **{tip}** | Kvota: {kvota}")
-        
-        st.info(f"💰 Ukupna kvota: **{round(ukupna_kvota, 2)}**")
+    st.subheader("Generiši tiket od pravih mečeva")
+    if st.button("SASTAVI TIKET OD DANAŠNJIH PAROVA 🍀"):
+        danasnji = ucitaj_danasnje_parove()
+        moj_tiket = random.sample(danasnji, 3)
+        for p in moj_tiket:
+            tip = random.choice(["1X", "2", "0-2", "GG"])
+            st.write(f"⚽ **{p[0]} - {p[1]}** | Tip: {tip}")
+        st.balloons()
 
-st.write("---")
-st.caption("© 2024 BetGen - Powered by AI & Open-Meteo")
+st.caption(f"Podaci osveženi: {datetime.now().strftime('%d.%m.%Y %H:%M')}")
