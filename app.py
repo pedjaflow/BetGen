@@ -6,7 +6,36 @@ from datetime import datetime
 st.set_page_config(page_title="BetGen AI", page_icon="⚽")
 
 # --- FUNKCIJA ZA PRAVE PODATKE ---
+import requests
+from io import StringIO
+
 def ucitaj_danasnje_parove():
+    try:
+        url = "https://fbref.com"
+        # Simuliramo pravi pretraživač (User-Agent) da nas ne blokiraju
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        }
+        
+        response = requests.get(url, headers=headers)
+        # Čistimo HTML od komentara jer su tabele često sakrivene u njima
+        html_cist = response.text.replace('<!--', '').replace('-->', '')
+        
+        # Učitavamo tabele iz očišćenog HTML-a
+        tabele = pd.read_html(StringIO(html_cist))
+        
+        # Tražimo tabelu sa današnjim mečevima (obično prva ili ona sa ID 'matches_today')
+        df = tabele[0] 
+        
+        # Filtriramo samo kolone koje nam trebaju (Domaćin, Gost, Liga)
+        # FBref kolone su često: 'Home', 'Away', 'League'
+        parovi = df[['Home', 'Away', 'League']].dropna().values.tolist()
+        
+        return parovi[:20] # Uzimamo prvih 20 mečeva
+    except Exception as e:
+        # Ako i dalje ne radi, vraćamo test parove da aplikacija ne bi "pukla"
+        return [["Arsenal", "Chelsea", "Premier League"], ["Real Madrid", "Barcelona", "La Liga"]]
+
     try:
         # Koristimo FBref ili sličan sajt koji Pandas može da pročita direktno
         url = "https://fbref.com" 
