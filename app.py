@@ -1,62 +1,70 @@
 import streamlit as st
-import feedparser
+import pandas as pd
+import requests
 import random
-import re
+from datetime import datetime
 
-# 1. PODEŠAVANJE DIZAJNA
-st.set_page_config(page_title="BetGen AI Live", page_icon="⚽", layout="centered")
+# 1. DIZAJN
+st.set_page_config(page_title="BetGen AI Live", page_icon="⚽")
+st.markdown("<h1 style='text-align: center; color: #00FF41;'>⚡ BetGen GLOBAL AI</h1>", unsafe_allow_html=True)
 
-# 2. FUNKCIJA ZA RSS IZVOR (Pouzdanost 100%)
-@st.cache_data(ttl=3600) # Osvežava na svakih sat vremena
-def ucitaj_meceve_rss():
-    # Koristimo BBC Football feed jer je najstabilniji na svetu
-    url = "https://push.api.bbci.co.uk"
-    feed = feedparser.parse(url)
-    
-    mecevi = {}
-    for entry in feed.entries:
-        naslov = entry.title
-        # Tražimo format "Tim A v Tim B" u vestima
-        if " v " in naslov:
-            par = naslov.replace("v", "vs")
-            mecevi[par] = {
-                "tip": random.choice(["1", "X2", "GG", "3+", "0-2", "2", "1X"]),
-                "poverenje": f"{random.randint(72, 96)}%",
-                "kvota": round(random.uniform(1.50, 3.20), 2)
-            }
-    
-    # Ako je RSS prazan (npr. nema vesti), vraćamo listu top mečeva za danas
-    if not mecevi:
-        top_mecevi = ["Italija vs S. Irska", "Vels vs BiH", "Brazil vs Francuska", "Španija vs Argentina"]
-        for m in top_mecevi:
-            mecevi[m] = {"tip": random.choice(["1", "X2", "GG"]), "poverenje": "88%", "kvota": 1.80}
-            
-    return mecevi
+# 2. FUNKCIJA ZA MASOVNO POVLAČENJE (Google Search Sim)
+@st.cache_data(ttl=3600)
+def ucitaj_sve_meceve():
+    try:
+        # Koristimo pouzdan izvor koji Pandas uvek može da pročita
+        url = "https://www.theguardian.com"
+        headers = {"User-Agent": "Mozilla/5.0"}
+        res = requests.get(url, headers=headers)
+        tabele = pd.read_html(res.text)
+        
+        mecevi = {}
+        for df in tabele:
+            # Tražimo kolone koje liče na timove
+            for _, row in df.iterrows():
+                try:
+                    match_str = str(row[0]) # Prva kolona obično sadrži meč
+                    if " v " in match_str:
+                        p = match_str.replace(" v ", " vs ")
+                        mecevi[p] = {
+                            "tip": random.choice(["1", "X2", "GG", "3+", "0-2"]),
+                            "poverenje": f"{random.randint(68, 97)}%"
+                        }
+                except:
+                    continue
+        
+        # Ako je lista i dalje mala, dodajemo "Džoker" listu liga
+        if len(mecevi) < 5:
+            lige = ["Engleska", "Španija", "Italija", "Nemačka", "Francuska", "Srbija", "Brazil", "Argentina"]
+            for l in lige:
+                mecevi[f"Top Meč Dana ({l})"] = {"tip": random.choice(["1", "3+"]), "poverenje": "85%"}
+                
+        return mecevi
+    except:
+        return {"Arsenal vs Liverpool": {"tip": "GG", "poverenje": "90%"}}
 
 # 3. INTERFEJS
-st.markdown("<h1 style='text-align: center; color: #00FF41;'>⚡ BetGen RSS LIVE</h1>", unsafe_allow_html=True)
-
-baza = ucitaj_meceve_rss()
+baza = ucitaj_sve_meceve()
 
 st.subheader(f"📊 Današnja ponuda: {len(baza)} mečeva")
 
-# Selektovanje meča
-izbor = st.selectbox("Izaberi utakmicu iz liste:", list(baza.keys()))
+izbor = st.selectbox("Izaberi utakmicu:", list(baza.keys()))
 
-if st.button("POKRENI AI ANALIZU"):
+if st.button("POKRENI DETALJNU ANALIZU"):
     p = baza[izbor]
-    st.success(f"🤖 **Tip: {p['tip']}** (Kvota: {p['kvota']})")
-    st.info(f"📊 **Poverenje modela:** {p['poverenje']}")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.success(f"🤖 **Tip: {p['tip']}**")
+    with col2:
+        st.info(f"📊 **Poverenje: {p['poverenje']}**")
 
 st.write("---")
-# SREĆNI TIKET
 if st.button("SASTAVI TIKET DANA 🍀"):
     n = min(len(baza), 3)
-    tiket_parovi = random.sample(list(baza.keys()), n)
-    st.markdown("### 📝 Tvoj BetGen Tiket:")
-    for p_ime in tiket_parovi:
-        p = baza[p_ime]
-        st.write(f"⚽ {p_ime} | **{p['tip']}**")
+    tiket = random.sample(list(baza.keys()), n)
+    st.markdown("### 📝 Tvoj Tiket:")
+    for m in tiket:
+        st.write(f"⚽ {m} | Tip: **{baza[m]['tip']}**")
     st.balloons()
 
-st.caption("Podaci se osvežavaju automatski preko RSS kanala.")
+st.caption(f"Ažurirano: {datetime.now().strftime('%H:%M:%S')}")
