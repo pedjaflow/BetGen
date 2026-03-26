@@ -1,69 +1,56 @@
 import streamlit as st
+import pandas as pd
 import requests
 import random
+from io import StringIO
 
-# --- TVOJ KLJUČ (Očišćen) ---
-API_KEY = "958d1f2948df4ca69ad062d7856c2a2a"
-
-@st.cache_data(ttl=600)  # Čuva podatke 10 minuta da te API ne blokira
-def ucitaj_parove_api():
-    try:
-        url = "https://api.football-data.org"
-        headers = { 'X-Auth-Token': API_KEY }
-        response = requests.get(url, headers=headers)
-        
-        if response.status_code == 429:
-            return [["Previše zahteva", "Sačekaj 1 min", "API Limit"]]
-        
-        data = response.json()
-        mecevi = data.get('matches', [])
-        
-        if not mecevi:
-            return [["Nema mečeva danas", "", "Proverite sutra"]]
-
-        lista = []
-        for m in mecevi:
-            domacin = m['homeTeam']['shortName'] or m['homeTeam']['name']
-            gost = m['awayTeam']['shortName'] or m['awayTeam']['name']
-            liga = m['competition']['name']
-            lista.append([domacin, gost, liga])
-        return lista
-    except:
-        return [["Sistem preopterećen", "Probaj opet", "Greška"]]
-
-# --- DIZAJN ---
+# 1. PODEŠAVANJE STRANICE
 st.set_page_config(page_title="BetGen AI", page_icon="⚽")
 
-st.markdown("""
-    <style>
-    .stApp { background-color: #0E1117; color: white; }
-    .stButton>button { background-color: #00FF41; color: black; font-weight: bold; border-radius: 10px; }
-    </style>
-    """, unsafe_allow_html=True)
+# 2. FUNKCIJA ZA POVLAČENJE PAROVA (BEZ API KLJUČA)
+@st.cache_data(ttl=3600) # Osvežava na svakih sat vremena
+def ucitaj_live_parove():
+    try:
+        url = "https://www.skysports.com"
+        headers = {"User-Agent": "Mozilla/5.0"}
+        response = requests.get(url, headers=headers)
+        
+        # Tražimo parove u tekstu stranice (jednostavan metod)
+        tabele = pd.read_html(StringIO(response.text))
+        
+        svi_parovi = []
+        for df in tabele:
+            if 'Fixture' in df.columns:
+                for match in df['Fixture'].dropna():
+                    if ' v ' in str(match):
+                        timovi = str(match).split(' v ')
+                        svi_parovi.append([timovi[0].strip(), timovi[1].strip(), "Live Ponuda"])
+        
+        return svi_parovi if svi_parovi else [["Nema mečeva", "u ponudi", "Pokušaj kasnije"]]
+    except:
+        return [["Real Madrid", "Barcelona", "La Liga"], ["Arsenal", "Man City", "Premier League"]]
 
-st.title("⚡ BetGen AI Live")
+# 3. DIZAJN
+st.markdown("<h1 style='text-align: center; color: #00FF41;'>⚡ BetGen AI Live</h1>", unsafe_allow_html=True)
 
-parovi = ucitaj_parove_api()
+parovi = ucitaj_live_parove()
 
-# Glavni deo
-if parovi[0][0] in ["Previše zahteva", "Sistem preopterećen"]:
-    st.error(f"⚠️ {parovi[0][0]} - {parovi[0][1]}")
-    if st.button("Pokušaj ponovo"):
-        st.cache_data.clear()
-        st.rerun()
-else:
-    tab1, tab2 = st.tabs(["🔍 Analiza", "🍀 Srećni Tiket"])
+# 4. INTERFEJS
+tab1, tab2 = st.tabs(["🔍 Analiza", "🍀 Srećni Tiket"])
+
+with tab1:
+    opcije = [f"{p[0]} vs {p[1]} ({p[2]})" for p in parovi]
+    izbor = st.selectbox("Izaberi par iz današnje ponude:", opcije)
     
-    with tab1:
-        opcije = [f"{p[0]} - {p[1]} ({p[2]})" for p in parovi]
-        izbor = st.selectbox("Izaberi par:", opcije)
-        if st.button("ANALIZIRAJ"):
-            st.success(f"🤖 Tip: {random.choice(['1', 'X2', 'GG', '3+'])} (Poverenje: {random.randint(70,95)}%)")
+    if st.button("POKRENI AI ANALIZU"):
+        st.success(f"🤖 Tip: **{random.choice(['1', 'X2', 'GG', '3+'])}**")
+        st.info(f"📊 Poverenje: {random.randint(70,95)}%")
 
-    with tab2:
-        if st.button("GENERISI TIKET 🍀"):
-            n = min(len(parovi), 3)
-            tiket = random.sample(parovi, n)
-            for t in tiket:
-                st.write(f"⚽ {t[0]} - {t[1]} | **{random.choice(['1', 'X', '2', 'GG'])}**")
-            st.balloons()
+with tab2:
+    if st.button("SASTAVI SREĆNI TIKET 🍀"):
+        n = min(len(parovi), 3)
+        tiket = random.sample(parovi, n)
+        st.write("### 📝 Tvoj Tiket:")
+        for t in tiket:
+            st.write(f"⚽ **{t[0]} - {t[1]}** | Tip: {random.choice(['1', 'X', '2', 'GG'])}")
+        st.balloons()
