@@ -1,28 +1,47 @@
 import streamlit as st
-import random
 
-st.set_page_config(page_title="BetGen AI", page_icon="⚡")
+# 1. PODEŠAVANJE DIZAJNA
+st.set_page_config(page_title="BetGen AI", page_icon="⚽")
+st.markdown("<h1 style='text-align: center; color: #00FF41;'>⚡ BetGen PRO Analiza</h1>", unsafe_allow_html=True)
 
-st.markdown("<h1 style='text-align: center; color: #00FF41;'>⚡ BetGen PRO</h1>", unsafe_allow_html=True)
+# 2. TVOJA BAZA ANALIZA (Ovde unosiš parove i tekstove koje ti ja dam)
+# Možeš sam dodavati nove redove ovde!
+baza_analiza = {
+    "Italija - Severna Irska": {
+        "tip": "1 & 2-4",
+        "analiza": "Italija igra kod kuće u play-off polufinalu. Severna Irska će se braniti, ali kvalitet Azura presuđuje.",
+        "poverenje": "92%"
+    },
+    "Brazil - Francuska": {
+        "tip": "GG (Oba tima daju gol)",
+        "analiza": "Spektakl u prijateljskom tonu. Obe ekipe testiraju najjače sastave, očekuje se otvoren fudbal.",
+        "poverenje": "85%"
+    },
+    "Vels - Bosna i Hercegovina": {
+        "tip": "0-2 gola",
+        "analiza": "Veoma tvrd meč u Kardifu. Tradicija kaže da u duelima ovih timova retko pada mnogo golova.",
+        "poverenje": "78%"
+    },
+    "Španija - Argentina": {
+        "tip": "X2 & GG",
+        "analiza": "Finalissima 2026! Šampion Evrope protiv šampiona J. Amerike. Borba za prestiž i trofej.",
+        "poverenje": "80%"
+    }
+}
 
-# TABOVI
-tab1, tab2 = st.tabs(["🎯 Današnje Prognoze", "🍀 Srećni Tiket"])
+# 3. INTERFEJS ZA KORISNIKA
+st.subheader("Izaberi meč za detaljnu prognozu:")
 
-with tab1:
-    st.subheader("Analiza Expert Modela")
-    # Ovde nalepiš ono što ti ja pošaljem
-    dnevni_unos = st.text_area("Admin unos (samo za tebe):", "Real Madrid - Barcelona | Tip: GG3+ | Poverenje: 88%")
+# Korisnik bira par sa spiska (ključi iz naše baze)
+izabrani_par = st.selectbox("Dostupni mečevi danas:", list(baza_analiza.keys()))
+
+if st.button("PRIKAŽI BETGEN PROGNOZU"):
+    podaci = baza_analiza[izabrani_par]
     
-    if st.button("PRIKAŽI ANALIZU"):
-        st.success(f"🤖 **BetGen Analiza:** \n\n {dnevni_unos}")
+    st.markdown(f"### 🏟️ {izabrani_par}")
+    st.success(f"🤖 **Preporučeni Tip:** {podaci['tip']}")
+    st.info(f"📝 **Analiza:** {podaci['analiza']}")
+    st.warning(f"📊 **Poverenje modela:** {podaci['poverenje']}")
 
-with tab2:
-    st.subheader("Generiši tiket")
-    if st.button("SASTAVI TIKET 🍀"):
-        parovi = ["Arsenal - Liverpool", "Milan - Inter", "Bayern - Dortmund", "Partizan - Zvezda"]
-        tiket = random.sample(parovi, 2)
-        for t in tiket:
-            st.write(f"⚽ {t} | Tip: **{random.choice(['1', 'X2', 'GG'])}**")
-        st.balloons()
-
-st.info("💡 Podatke za danas obezbedio BetGen AI Expert model.")
+st.write("---")
+st.caption("© 2024 BetGen Expert Mode")
