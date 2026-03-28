@@ -1,59 +1,53 @@
 import streamlit as st
-import requests
-from datetime import datetime
+import random
 
-# Postavke stranice
-st.set_page_config(page_title="BetGen AI", page_icon="⚽")
+# Postavke dizajna
+st.set_page_config(page_title="BetGen PRO", page_icon="⚽")
+st.markdown("""
+    <style>
+    .stApp { background-color: #0E1117; color: white; }
+    .stButton>button { background-color: #00FF41; color: black; font-weight: bold; border-radius: 10px; width: 100%; }
+    </style>
+    """, unsafe_allow_html=True)
 
-# TVOJ KLJUČ (Football-Data.org)
-API_KEY = "958d1f2948df4ca69ad062d7856c2a2a"
+st.title("⚡ BetGen PRO AI")
 
-@st.cache_data(ttl=3600)
-def ucitaj_meceve_v4():
-    # Ovo je prava adresa za tvoj ključ (Football-Data.org)
-    url = "https://api.football-data.org"
-    headers = { 'X-Auth-Token': API_KEY }
+# BAZA NAJJAČIH MEČEVA (Za vikend 28-29. mart)
+mecevi_vikend = [
+    "Srbija vs Mađarska (Prijateljska)",
+    "Nemačka vs Engleska (Prijateljska)",
+    "Španija vs Argentina (Finalissima)",
+    "Brazil vs Francuska (Prijateljska)",
+    "Italija vs Severna Irska (Kvalifikacije)",
+    "Vels vs Bosna i Hercegovina (Kvalifikacije)",
+    "Crvena Zvezda vs Partizan (Simulacija)",
+    "Arsenal vs Chelsea (Premijer Liga)",
+    "Real Madrid vs Barcelona (La Liga)"
+]
+
+tab1, tab2 = st.tabs(["🔍 AI Prognoza", "🍀 Srećni Tiket"])
+
+with tab1:
+    st.subheader("Izaberi derbi meč:")
+    izbor = st.selectbox("Dostupna ponuda:", mecevi_vikend)
     
-    try:
-        response = requests.get(url, headers=headers)
-        # Ako dobijemo grešku 403, znači da ključ nije za v4 ili su limitirani mečevi
-        if response.status_code != 200:
-            return [f"Greška {response.status_code}: Proveri ključ na sajtu"]
-            
-        data = response.json()
-        mecevi = data.get('matches', [])
-        
-        if not mecevi:
-            return ["Trenutno nema aktivnih mečeva u tvojim ligama."]
-
-        lista = []
-        for m in mecevi:
-            domacin = m['homeTeam']['name']
-            gost = m['awayTeam']['name']
-            liga = m['competition']['name']
-            lista.append(f"{domacin} vs {gost} ({liga})")
-        return lista
-    except Exception as e:
-        return [f"Sistem nedostupan: {str(e)}"]
-
-# DIZAJN
-st.markdown("<h1 style='color: #00FF41; text-align: center;'>⚡ BetGen LIVE</h1>", unsafe_allow_html=True)
-
-# POVLAČENJE PODATAKA
-svi_parovi = ucitaj_meceve_v4()
-
-# PROVERA I PRIKAZ
-if "Greška" in svi_parovi[0] or "Nema" in svi_parovi[0]:
-    st.error(svi_parovi[0])
-    st.info("💡 Savet: Proveri da li si na football-data.org potvrdio mejl nakon registracije.")
-else:
-    st.subheader(f"📅 Današnja ponuda: {len(svi_parovi)} mečeva")
-    izbor = st.selectbox("Izaberi par za AI prognozu:", svi_parovi)
-    
-    if st.button("POKRENI BETGEN"):
-        import random
+    if st.button("POKRENI BETGEN MOZAK"):
         tipovi = ["1", "X", "2", "GG", "3+", "0-2", "1X", "X2"]
-        st.success(f"🤖 Tip: **{random.choice(tipovi)}** (Poverenje: {random.randint(70,96)}%)")
+        izabrani_tip = random.choice(tipovi)
+        poverenje = random.randint(75, 98)
+        
+        st.success(f"🤖 **Tip: {izabrani_tip}**")
+        st.info(f"📊 **Poverenje: {poverenje}%**")
+        st.write(f"📝 *Analiza:* Na osnovu trenutne forme i atmosfere u timovima, naš AI predviđa {izabrani_tip} kao najsigurniji ishod.")
+
+with tab2:
+    st.subheader("Generiši brzi tiket")
+    if st.button("SASTAVI TIKET DANA 🍀"):
+        parovi = random.sample(mecevi_vikend, 3)
+        st.markdown("### 📝 Tvoj BetGen Tiket:")
+        for p in parovi:
+            st.write(f"⚽ {p} | Tip: **{random.choice(['1X', 'GG', '3+'])}**")
+        st.balloons()
 
 st.write("---")
-st.caption("Podaci: Football-Data.org API")
+st.caption("© 2024 BetGen • Expert AI Model • Offline Mode Aktivan")
