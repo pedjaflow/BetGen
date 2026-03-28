@@ -1,66 +1,38 @@
 import streamlit as st
 import random
 
-# 1. FORSIRANJE TAMNE TEME I BOJA
-st.set_page_config(page_title="BetGen PRO", page_icon="⚽", layout="centered")
-
+# Dizajn - crna pozadina i neon zelena
+st.set_page_config(page_title="BetGen AI", page_icon="⚽")
 st.markdown("""
     <style>
-    /* Pozadina cele aplikacije */
-    .stApp { background-color: #0E1117 !important; }
-    /* Svi tekstovi postaju beli */
-    h1, h2, h3, p, span, label { color: #FFFFFF !important; }
-    /* Naslov u neon zelenoj */
-    .neon-title { color: #00FF41 !important; text-align: center; font-size: 40px; font-weight: bold; text-shadow: 0 0 10px #00FF41; }
-    /* Dugmići */
-    .stButton>button { 
-        background-color: #00FF41 !important; color: black !important; 
-        font-weight: bold !important; border-radius: 12px !important; 
-        border: none !important; width: 100% !important; height: 55px !important;
-    }
-    /* Okviri za unos */
-    .stSelectbox div[data-baseweb="select"] { background-color: #1A1C23 !important; border: 1px solid #00FF41 !important; }
+    .stApp { background-color: #0E1117; color: white; }
+    .stButton>button { background-color: #00FF41; color: black; font-weight: bold; border-radius: 10px; width: 100%; }
+    .stTextInput>div>div>input { background-color: #1A1C23; color: white; border: 1px solid #00FF41; }
     </style>
     """, unsafe_allow_html=True)
 
-# 2. NASLOV
-st.markdown("<div class='neon-title'>⚡ BetGen PRO AI</div>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #888 !important;'>Ažurirano: Subota, 28. mart</p>", unsafe_allow_html=True)
+st.title("⚡ BetGen PRO")
 
-# 3. AKTIVNI MEČEVI ZA DANAS (SUBOTA, 28. MART)
-# Ovde menjaš listu kad god želiš nove parove
-mecevi_danas = [
-    "Srbija vs Mađarska (Prijateljska - UŽIVO)",
-    "Hrvatska vs Norveška (Prijateljska)",
-    "Španija vs Argentina (Finalissima 2026)",
-    "Engleska vs Nemačka (Klasik)",
-    "Francuska vs Brazil (Spektakl)",
-    "Portugal vs Turska (Play-off)",
-    "Poljska vs Švedska (Kvalifikacije)",
-    "Austrija vs Bosna i Hercegovina",
-    "Crna Gora vs Grčka"
-]
+# KORISNIK SAM UNOSI PAROVE (Najsigurniji način da nema greške)
+st.subheader("Unesi parove za današnji tiket:")
+par1 = st.text_input("Utakmica 1:", "Primer: Arsenal - Chelsea")
+par2 = st.text_input("Utakmica 2:", "Primer: Real Madrid - Barcelona")
+par3 = st.text_input("Utakmica 3:", "Primer: Partizan - Zvezda")
 
-tab1, tab2 = st.tabs(["🔍 ANALIZA", "🍀 TIKET"])
-
-with tab1:
-    st.subheader("Izaberi meč za AI prognozu:")
-    izbor = st.selectbox("Današnja ponuda:", mecevi_danas)
+if st.button("POKRENI AI ANALIZU I SASTAVI TIKET 🍀"):
+    lista_parova = [par1, par2, par3]
+    st.markdown("### 🤖 BetGen Analiza za tvoj tiket:")
     
-    if st.button("POKRENI BETGEN MOZAK"):
-        tipovi = ["1", "X2", "GG", "3+", "0-2", "2", "1X", "GG3+"]
-        poverenje = random.randint(78, 97)
-        st.success(f"🤖 **TIP: {random.choice(tipovi)}** (Poverenje: {poverenje}%)")
-        st.info("📊 **Analiza:** Favorit ulazi u meč sa punim sastavom. Očekuje se visok intenzitet.")
-
-with tab2:
-    st.subheader("Sastavi dobitni tiket")
-    if st.button("GENERISI SREĆNI TIKET 🍀"):
-        parovi = random.sample(mecevi_danas, 3)
-        st.write("### 📝 Tvoj BetGen Tiket:")
-        for p in parovi:
-            st.write(f"⚽ {p} | Tip: **{random.choice(['1', 'GG', 'X2', '3+'])}**")
-        st.balloons()
+    ukupna_kvota = 1.0
+    for p in lista_parova:
+        if p and "Primer" not in p:
+            tip = random.choice(["1", "X2", "GG", "3+", "1X", "0-2"])
+            kvota = round(random.uniform(1.40, 2.10), 2)
+            ukupna_kvota *= kvota
+            st.write(f"⚽ **{p}** | Tip: **{tip}** | Kvota: {kvota}")
+    
+    st.success(f"💰 Ukupna kvota: **{round(ukupna_kvota, 2)}**")
+    st.balloons()
 
 st.write("---")
-st.caption("© 2026 BetGen Expert Mode • Offline Database")
+st.caption("Unesi prave parove sa teleteksta i BetGen će uraditi ostalo.")
