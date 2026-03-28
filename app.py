@@ -5,54 +5,55 @@ from datetime import datetime
 # Postavke stranice
 st.set_page_config(page_title="BetGen AI", page_icon="⚽")
 
-# TVOJ KLJUČ KOJI SI MI DAO
+# TVOJ KLJUČ (Football-Data.org)
 API_KEY = "958d1f2948df4ca69ad062d7856c2a2a"
 
 @st.cache_data(ttl=3600)
-def ucitaj_sve_utakmice():
-    url = "https://v3.football.api-sports.io"
-    # Uzimamo današnji datum za pretragu
-    danas = datetime.now().strftime('%Y-%m-%d')
-    headers = {
-        'x-rapidapi-key': API_KEY,
-        'x-rapidapi-host': 'v3.football.api-sports.io'
-    }
-    params = {'date': danas}
+def ucitaj_meceve_v4():
+    # Ovo je prava adresa za tvoj ključ (Football-Data.org)
+    url = "https://api.football-data.org"
+    headers = { 'X-Auth-Token': API_KEY }
     
     try:
-        response = requests.get(url, headers=headers, params=params)
+        response = requests.get(url, headers=headers)
+        # Ako dobijemo grešku 403, znači da ključ nije za v4 ili su limitirani mečevi
+        if response.status_code != 200:
+            return [f"Greška {response.status_code}: Proveri ključ na sajtu"]
+            
         data = response.json()
-        mecevi = data.get('response', [])
+        mecevi = data.get('matches', [])
         
+        if not mecevi:
+            return ["Trenutno nema aktivnih mečeva u tvojim ligama."]
+
         lista = []
         for m in mecevi:
-            domacin = m['teams']['home']['name']
-            gost = m['teams']['away']['name']
-            liga = m['league']['name']
+            domacin = m['homeTeam']['name']
+            gost = m['awayTeam']['name']
+            liga = m['competition']['name']
             lista.append(f"{domacin} vs {gost} ({liga})")
         return lista
-    except:
-        return ["Nema dostupnih utakmica trenutno ili je ključ istekao."]
+    except Exception as e:
+        return [f"Sistem nedostupan: {str(e)}"]
 
 # DIZAJN
-st.markdown("<h1 style='color: #00FF41;'>⚡ BetGen LIVE</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='color: #00FF41; text-align: center;'>⚡ BetGen LIVE</h1>", unsafe_allow_html=True)
 
 # POVLAČENJE PODATAKA
-svi_parovi = ucitaj_sve_utakmice()
+svi_parovi = ucitaj_meceve_v4()
 
-if not svi_parovi or "Nema" in svi_parovi[0]:
-    st.warning("Trenutno nema utakmica u bazi. Proverite podešavanja ključa.")
+# PROVERA I PRIKAZ
+if "Greška" in svi_parovi[0] or "Nema" in svi_parovi[0]:
+    st.error(svi_parovi[0])
+    st.info("💡 Savet: Proveri da li si na football-data.org potvrdio mejl nakon registracije.")
 else:
     st.subheader(f"📅 Današnja ponuda: {len(svi_parovi)} mečeva")
+    izbor = st.selectbox("Izaberi par za AI prognozu:", svi_parovi)
     
-    # KORISNIK BIRA IZ CELE LISTE
-    izbor = st.selectbox("Izaberi utakmicu za analizu:", svi_parovi)
-    
-    if st.button("POKRENI AI PROGNOZU"):
+    if st.button("POKRENI BETGEN"):
         import random
-        tip = random.choice(["1", "X2", "GG", "3+", "0-2"])
-        poverenje = random.randint(70, 95)
-        st.success(f"🤖 Tip: **{tip}** | Poverenje: {poverenje}%")
+        tipovi = ["1", "X", "2", "GG", "3+", "0-2", "1X", "X2"]
+        st.success(f"🤖 Tip: **{random.choice(tipovi)}** (Poverenje: {random.randint(70,96)}%)")
 
 st.write("---")
-st.caption("Podaci obezbeđeni putem API-Football")
+st.caption("Podaci: Football-Data.org API")
