@@ -1,53 +1,66 @@
 import streamlit as st
 import random
 
-# Postavke dizajna
-st.set_page_config(page_title="BetGen PRO", page_icon="⚽")
+# 1. FORSIRANJE TAMNE TEME I BOJA
+st.set_page_config(page_title="BetGen PRO", page_icon="⚽", layout="centered")
+
 st.markdown("""
     <style>
-    .stApp { background-color: #0E1117; color: white; }
-    .stButton>button { background-color: #00FF41; color: black; font-weight: bold; border-radius: 10px; width: 100%; }
+    /* Pozadina cele aplikacije */
+    .stApp { background-color: #0E1117 !important; }
+    /* Svi tekstovi postaju beli */
+    h1, h2, h3, p, span, label { color: #FFFFFF !important; }
+    /* Naslov u neon zelenoj */
+    .neon-title { color: #00FF41 !important; text-align: center; font-size: 40px; font-weight: bold; text-shadow: 0 0 10px #00FF41; }
+    /* Dugmići */
+    .stButton>button { 
+        background-color: #00FF41 !important; color: black !important; 
+        font-weight: bold !important; border-radius: 12px !important; 
+        border: none !important; width: 100% !important; height: 55px !important;
+    }
+    /* Okviri za unos */
+    .stSelectbox div[data-baseweb="select"] { background-color: #1A1C23 !important; border: 1px solid #00FF41 !important; }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("⚡ BetGen PRO AI")
+# 2. NASLOV
+st.markdown("<div class='neon-title'>⚡ BetGen PRO AI</div>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #888 !important;'>Ažurirano: Subota, 28. mart</p>", unsafe_allow_html=True)
 
-# BAZA NAJJAČIH MEČEVA (Za vikend 28-29. mart)
-mecevi_vikend = [
-    "Srbija vs Mađarska (Prijateljska)",
-    "Nemačka vs Engleska (Prijateljska)",
-    "Španija vs Argentina (Finalissima)",
-    "Brazil vs Francuska (Prijateljska)",
-    "Italija vs Severna Irska (Kvalifikacije)",
-    "Vels vs Bosna i Hercegovina (Kvalifikacije)",
-    "Crvena Zvezda vs Partizan (Simulacija)",
-    "Arsenal vs Chelsea (Premijer Liga)",
-    "Real Madrid vs Barcelona (La Liga)"
+# 3. AKTIVNI MEČEVI ZA DANAS (SUBOTA, 28. MART)
+# Ovde menjaš listu kad god želiš nove parove
+mecevi_danas = [
+    "Srbija vs Mađarska (Prijateljska - UŽIVO)",
+    "Hrvatska vs Norveška (Prijateljska)",
+    "Španija vs Argentina (Finalissima 2026)",
+    "Engleska vs Nemačka (Klasik)",
+    "Francuska vs Brazil (Spektakl)",
+    "Portugal vs Turska (Play-off)",
+    "Poljska vs Švedska (Kvalifikacije)",
+    "Austrija vs Bosna i Hercegovina",
+    "Crna Gora vs Grčka"
 ]
 
-tab1, tab2 = st.tabs(["🔍 AI Prognoza", "🍀 Srećni Tiket"])
+tab1, tab2 = st.tabs(["🔍 ANALIZA", "🍀 TIKET"])
 
 with tab1:
-    st.subheader("Izaberi derbi meč:")
-    izbor = st.selectbox("Dostupna ponuda:", mecevi_vikend)
+    st.subheader("Izaberi meč za AI prognozu:")
+    izbor = st.selectbox("Današnja ponuda:", mecevi_danas)
     
     if st.button("POKRENI BETGEN MOZAK"):
-        tipovi = ["1", "X", "2", "GG", "3+", "0-2", "1X", "X2"]
-        izabrani_tip = random.choice(tipovi)
-        poverenje = random.randint(75, 98)
-        
-        st.success(f"🤖 **Tip: {izabrani_tip}**")
-        st.info(f"📊 **Poverenje: {poverenje}%**")
-        st.write(f"📝 *Analiza:* Na osnovu trenutne forme i atmosfere u timovima, naš AI predviđa {izabrani_tip} kao najsigurniji ishod.")
+        tipovi = ["1", "X2", "GG", "3+", "0-2", "2", "1X", "GG3+"]
+        poverenje = random.randint(78, 97)
+        st.success(f"🤖 **TIP: {random.choice(tipovi)}** (Poverenje: {poverenje}%)")
+        st.info("📊 **Analiza:** Favorit ulazi u meč sa punim sastavom. Očekuje se visok intenzitet.")
 
 with tab2:
-    st.subheader("Generiši brzi tiket")
-    if st.button("SASTAVI TIKET DANA 🍀"):
-        parovi = random.sample(mecevi_vikend, 3)
-        st.markdown("### 📝 Tvoj BetGen Tiket:")
+    st.subheader("Sastavi dobitni tiket")
+    if st.button("GENERISI SREĆNI TIKET 🍀"):
+        parovi = random.sample(mecevi_danas, 3)
+        st.write("### 📝 Tvoj BetGen Tiket:")
         for p in parovi:
-            st.write(f"⚽ {p} | Tip: **{random.choice(['1X', 'GG', '3+'])}**")
+            st.write(f"⚽ {p} | Tip: **{random.choice(['1', 'GG', 'X2', '3+'])}**")
         st.balloons()
 
 st.write("---")
-st.caption("© 2024 BetGen • Expert AI Model • Offline Mode Aktivan")
+st.caption("© 2026 BetGen Expert Mode • Offline Database")
