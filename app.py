@@ -2,11 +2,12 @@ import streamlit as st
 import requests
 import os
 import random
+import pandas as pd
 
 # -------------------------
 # 1. Konfiguracija stranice i stil
 # -------------------------
-st.set_page_config(page_title="BetGen AI Expert", page_icon="⚽", layout="wide")
+st.set_page_config(page_title="BetGen AI Pro", page_icon="⚽", layout="wide")
 
 st.markdown("""
 <style>
@@ -23,7 +24,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.title("⚡ BetGen AI Expert - Više mečeva")
+st.title("⚡ BetGen AI Pro - Više mečeva + Analiza")
 
 # -------------------------
 # 2. API ključ iz Secrets
@@ -48,29 +49,34 @@ def get_matches():
         return []
 
 # -------------------------
-# 4. Funkcija za analizu
+# 4. Napredna analiza meča
 # -------------------------
 def analyze_match(match):
-    home = match.get("homeTeam", {}).get("name") or match.get("home")
-    away = match.get("awayTeam", {}).get("name") or match.get("away")
+    # Ako API ne daje timove, koristimo simulaciju
+    home = match.get("homeTeam", {}).get("name") or match.get("home") or f"Team {random.randint(1,50)}"
+    away = match.get("awayTeam", {}).get("name") or match.get("away") or f"Team {random.randint(51,100)}"
 
-    # Jednostavna analiza + random faktor
-    score_home = len(home) % 10 + random.randint(0,5)
-    score_away = len(away) % 10 + random.randint(0,5)
-    total = score_home + score_away
-    prob_home = int((score_home / total) * 100)
-    prob_away = int((score_away / total) * 100)
+    # Simulacija forme (poslednjih 5 mečeva)
+    form_home = [random.randint(0,3) for _ in range(5)]  # golovi
+    form_away = [random.randint(0,3) for _ in range(5)]
+
+    avg_home = sum(form_home)/5 + random.randint(0,1)  # malo random boost
+    avg_away = sum(form_away)/5 + random.randint(0,1)
+
+    total = avg_home + avg_away
+    prob_home = int((avg_home / total) * 100)
+    prob_away = int((avg_away / total) * 100)
     prob_draw = 100 - prob_home - prob_away
 
     if prob_home > prob_away:
         tip = "1"
-        analysis = f"{home} su favoriti jer imaju bolju formu."
+        analysis = f"{home} su favoriti (pros. golovi: {avg_home:.1f} vs {avg_away:.1f})"
     elif prob_away > prob_home:
         tip = "2"
-        analysis = f"{away} su favoriti zbog statistike poslednjih mečeva."
+        analysis = f"{away} su favoriti (pros. golovi: {avg_away:.1f} vs {avg_home:.1f})"
     else:
         tip = "X"
-        analysis = "Moguć nerešeni ishod. Timovi su izjednačeni."
+        analysis = "Meč je izjednačen, mogući nerešeni ishod."
 
     return {
         "home": home,
@@ -83,15 +89,14 @@ def analyze_match(match):
     }
 
 # -------------------------
-# 5. Dugme za učitavanje i prikaz mečeva
+# 5. Prikaz mečeva
 # -------------------------
 if st.button("Učitaj i analiziraj mečeve 🚀"):
-
     matches = get_matches()
 
-    # Ako nema više mečeva, kreiraj simulirane za test
+    # Ako nema više mečeva, kreiraj simulirane 10
     if not matches:
-        matches = [{"home": f"Team {i}", "away": f"Team {i+10}"} for i in range(1,6)]
+        matches = [{"home": f"Team {i}", "away": f"Team {i+10}"} for i in range(1,11)]
 
     # Prikaz svakog meča
     for m in matches:
@@ -101,11 +106,16 @@ if st.button("Učitaj i analiziraj mečeve 🚀"):
             <h3>🏟️ {data['home']} - {data['away']}</h3>
             <p>🤖 Predviđeni tip: <b>{data['tip']}</b></p>
             <p>📊 Verovatnoće:</p>
-            <ul>
-                <li>1 → {data['1']}%</li>
-                <li>X → {data['X']}%</li>
-                <li>2 → {data['2']}%</li>
-            </ul>
-            <p>💡 Analiza: {data['analysis']}</p>
         </div>
         """, unsafe_allow_html=True)
+
+        # Bar chart za procente
+        df = pd.DataFrame({
+            "Tip": ["1","X","2"],
+            "Verovatnoća": [data['1'], data['X'], data['2']]
+        })
+        st.bar_chart(df.set_index("Tip"))
+
+        # Analiza
+        st.info(f"💡 Analiza: {data['analysis']}")
+        st.write("---")
