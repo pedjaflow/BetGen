@@ -2,83 +2,94 @@ import streamlit as st
 import requests
 import os
 
-API_KEY = os.getenv("API_KEY")
-# 1. DIZAJN - ULTRA DARK
-st.set_page_config(page_title="BetGen AI Expert", page_icon="⚽", layout="centered")
+# -------------------------
+# 1. Konfiguracija stranice
+# -------------------------
+st.set_page_config(page_title="BetGen AI", page_icon="⚽", layout="centered")
+
 st.markdown("""
-    <style>
-    .stApp { background-color: #0E1117; color: white; }
-    .stButton>button { 
-        background-color: #00FF41; color: black; 
-        font-weight: bold; border-radius: 12px; height: 55px; border: none;
-        width: 100%;
-    }
-    .stTextInput>div>div>input { 
-        background-color: #1A1C23; color: white; border: 1px solid #00FF41; 
-        border-radius: 10px;
-    }
-    .report-card { 
-        background-color: #1A1C23; padding: 20px; border-radius: 15px; 
-        border-left: 6px solid #00FF41;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+<style>
+.stApp { background-color: #0E1117; color: white; }
+.stButton>button { 
+    background-color: #00FF41; color: black; 
+    font-weight: bold; border-radius: 12px; height: 50px;
+    width: 100%;
+}
+</style>
+""", unsafe_allow_html=True)
 
-st.markdown("<h1 style='text-align: center; color: #00FF41;'>⚡ BetGen AI EXPERT</h1>", unsafe_allow_html=True)
+st.title("⚡ BetGen AI (MVP)")
 
-# 2. FUNKCIJA ZA RESETOVANJE POLJA
-def reset_polja():
-    st.session_state.domacin = ""
-    st.session_state.gost = ""
+# -------------------------
+# 2. Uzimanje API ključa iz Secrets
+# -------------------------
+API_KEY = os.getenv("API_KEY")  # ovde dodaješ ključ u Streamlit Secrets
 
-# Inicijalizacija stanja ako ne postoji
-if 'domacin' not in st.session_state:
-    st.session_state.domacin = ""
-if 'gost' not in st.session_state:
-    st.session_state.gost = ""
-
-# 3. LOGIKA ZA FIKSNU ANALIZU
-def dobij_analizu(domacin, gost):
-    if not domacin or not gost:
-        return None
+# -------------------------
+# 3. Funkcija za povlačenje mečeva
+# -------------------------
+def get_matches():
+    url = "https://api.football-data.org/v4/matches"
+    headers = {"X-Auth-Token": API_KEY}
     
-    par_tekst = f"{domacin.strip()} - {gost.strip()}"
-    hash_id = int(hashlib.md5(par_tekst.lower().encode()).hexdigest(), 16)
-    
-    tipovi = ["1", "X", "2", "GG", "3+", "0-2", "1X", "X2", "GG3+"]
-    izabrani_tip = tipovi[hash_id % len(tipovi)]
-    poverenje = 75 + (hash_id % 21)
-    
-    return {"tip": izabrani_tip, "poverenje": poverenje}
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code != 200:
+            st.error(f"Greška API-ja: {response.status_code}")
+            return []
+        data = response.json()
+        return data.get("matches", [])[:10]  # uzimamo prvih 10 mečeva
+    except Exception as e:
+        st.error(f"Ne mogu da povučem podatke: {e}")
+        return []
 
-# 4. INTERFEJS
-col_a, col_b = st.columns(2)
-with col_a:
-    domacin_input = st.text_input("Domaćin:", key="domacin")
-with col_b:
-    gost_input = st.text_input("Gost:", key="gost")
+# -------------------------
+# 4. Analiza mečeva
+# -------------------------
+def analyze_match(match):
+    home = match["homeTeam"]["name"]
+    away = match["awayTeam"]["name"]
 
-# DUGMIĆI JEDAN PORED DRUGOG
-btn_col1, btn_col2 = st.columns(2)
-with btn_col1:
-    if st.button("ANALIZIRAJ 🚀"):
-        data = dobij_analizu(domacin_input, gost_input)
-        if data:
-            st.markdown(f"### 🏟️ {domacin_input} - {gost_input}")
-            st.success(f"🤖 **PROGNOZA: {data['tip']}**")
-            st.info(f"📊 **POVERENJE: {data['poverenje']}%**")
-            
-            st.markdown(f"""
-            <div class="report-card">
-                <b>📌 Detalji:</b> AI model je analizirao formu oba tima. <br>
-                Prognoza je fiksna i zasnovana na statističkoj verovatnoći.
-            </div>
-            """, unsafe_allow_html=True)
+    # jednostavan scoring (MVP) - kasnije možeš poboljšati
+    score_home = len(home) % 10 + 1
+    score_away = len(away) % 10 + 1
+
+    total = score_home + score_away
+    prob_home = int((score_home / total) * 100)
+    prob_away = int((score_away / total) * 100)
+    prob_draw = 100 - prob_home - prob_away
+
+    # određivanje tipa
+    if prob_home > prob_away:
+        tip = "1"
+    elif prob_away > prob_home:
+        tip = "2"
+    else:
+        tip = "X"
+
+    return {
+        "home": home,
+        "away": away,
+        "tip": tip,
+        "1": prob_home,
+        "X": prob_draw,
+        "2": prob_away
+    }
+
+# -------------------------
+# 5. Interfejs
+# -------------------------
+if st.button("Učitaj mečeve i analiziraj 🚀"):
+    if not API_KEY:
+        st.error("Nema API ključa! Dodaj ga u Streamlit Secrets.")
+    else:
+        matches = get_matches()
+        if not matches:
+            st.warning("Nema mečeva ili API ne radi.")
         else:
-            st.warning("Popuni oba polja.")
-
-with btn_col2:
-    st.button("RESETOVALI 🧹", on_click=reset_polja)
-
-st.write("---")
-st.caption("© 2026 BetGen Expert System • v15.0 (No-Link Edition)")
+            for m in matches:
+                data = analyze_match(m)
+                st.markdown(f"### 🏟️ {data['home']} - {data['away']}")
+                st.success(f"Tip: {data['tip']}")
+                st.write(f"1 → {data['1']}%\nX → {data['X']}%\n2 → {data['2']}%")
+                st.write("---")
