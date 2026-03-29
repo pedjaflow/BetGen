@@ -1,24 +1,46 @@
 import streamlit as st
+import requests
+from bs4 import BeautifulSoup
 import hashlib
 
-st.set_page_config(page_title="BetGen AI Multi Match", page_icon="⚽", layout="centered")
-st.title("⚡ BetGen AI - Analiza više mečeva")
+st.set_page_config(page_title="BetGen AI Live Scraper", page_icon="⚽", layout="centered")
+st.title("⚡ BetGen AI - Live analiza mečeva")
 
 # -------------------------
-# 1. Simulirana lista mečeva (za test)
+# 1. Funkcija za scraping live mečeva
 # -------------------------
-matches = [f"Team {i} - Team {i+10}" for i in range(1, 21)]  # 20 mečeva
-st.subheader("📋 Lista mečeva")
-selected_match = st.selectbox("Izaberi meč za analizu:", matches)
+def get_live_matches():
+    try:
+        url = "https://www.livescore.com/football/live/"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36"
+        }
+        r = requests.get(url, headers=headers)
+        soup = BeautifulSoup(r.text, "html.parser")
+
+        matches = []
+        # primer: pronađi sve utakmice u tagovima sa timovima
+        # ovo može zavisiti od stranice, trenutno simulacija
+        for div in soup.find_all("div"):
+            text = div.get_text().strip()
+            if " - " in text and len(text.split(" - ")) == 2:
+                matches.append(text)
+        
+        if not matches:
+            raise Exception("Nema utakmica")
+        
+        # ukloni duplikate i uzmi prvih 20
+        return list(dict.fromkeys(matches))[:20]
+    except:
+        st.warning("Ne mogu da povučem live podatke, koristićemo simulirane mečeve.")
+        return [f"Team {i} - Team {i+10}" for i in range(1,21)]
 
 # -------------------------
 # 2. Fiksna analiza po meču
 # -------------------------
 def analyze_match(match):
-    # hash za fiksnu analizu
     h = int(hashlib.md5(match.encode()).hexdigest(), 16)
-    
-    # generiši prosečne golove fiksno po hash-u
+
     avg_home = 1 + (h % 4) + ((h % 10)/10)
     avg_away = 1 + ((h//3) % 4) + ((h//7) % 10)/10
 
@@ -46,8 +68,11 @@ def analyze_match(match):
     }
 
 # -------------------------
-# 3. Dugme za analizu
+# 3. Glavni interfejs
 # -------------------------
+matches = get_live_matches()
+selected_match = st.selectbox("Izaberi meč za analizu:", matches)
+
 if st.button("Analiziraj meč 🚀"):
     data = analyze_match(selected_match)
     st.markdown(f"### 🏟️ {selected_match}")
