@@ -15,10 +15,6 @@ st.markdown("""
     font-weight: bold; border-radius: 12px; height: 50px;
     width: 100%;
 }
-.stSelectbox>div>div>select {
-    background-color: #1A1C23; color: white; border-radius: 10px;
-    padding: 5px;
-}
 .report-card { 
     background-color: #1A1C23; padding: 20px; border-radius: 15px; 
     border-left: 6px solid #00FF41; margin-bottom: 15px;
@@ -26,7 +22,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.title("⚡ BetGen AI Expert")
+st.title("⚡ BetGen AI Expert - Multi Mečevi")
 
 # -------------------------
 # 2. API ključ iz Secrets
@@ -45,7 +41,7 @@ def get_matches():
             st.error(f"Greška API-ja: {response.status_code}")
             return []
         data = response.json()
-        return data.get("matches", [])[:20]  # uzmi 20 mečeva
+        return data.get("matches", [])[:20]  # uzimamo 20 mečeva
     except Exception as e:
         st.error(f"Ne mogu da povučem podatke: {e}")
         return []
@@ -57,7 +53,7 @@ def analyze_match(match):
     home = match["homeTeam"]["name"]
     away = match["awayTeam"]["name"]
 
-    # Jednostavan scoring
+    # jednostavan scoring
     score_home = len(home) % 10 + 1
     score_away = len(away) % 10 + 1
     total = score_home + score_away
@@ -82,37 +78,30 @@ def analyze_match(match):
     }
 
 # -------------------------
-# 5. Glavni interfejs
+# 5. Interfejs i dugme za analizu
 # -------------------------
-st.subheader("📋 Lista dostupnih mečeva:")
-
-if not API_KEY:
-    st.error("Dodaj API ključ u Streamlit Secrets i restartuj aplikaciju.")
-else:
-    matches = get_matches()
-    
-    if not matches:
-        st.warning("Nema mečeva trenutno.")
+if st.button("Učitaj i analiziraj mečeve 🚀"):
+    if not API_KEY:
+        st.error("Dodaj API ključ u Streamlit Secrets i restartuj aplikaciju.")
     else:
-        # Dropdown lista mečeva
-        match_options = [f"{m['homeTeam']['name']} - {m['awayTeam']['name']}" for m in matches]
-        selected_match = st.selectbox("Izaberi meč za analizu:", match_options)
-
-        if selected_match:
-            # Pronađi odgovarajući match
-            match_obj = next(m for m in matches if f"{m['homeTeam']['name']} - {m['awayTeam']['name']}" == selected_match)
-            data = analyze_match(match_obj)
-
-            st.markdown(f"""
-            <div class="report-card">
-                <h3>🏟️ {data['home']} - {data['away']}</h3>
-                <p>🤖 Predviđeni tip: <b>{data['tip']}</b></p>
-                <p>📊 Verovatnoće:</p>
-                <ul>
-                    <li>1 → {data['1']}%</li>
-                    <li>X → {data['X']}%</li>
-                    <li>2 → {data['2']}%</li>
-                </ul>
-                <p>💡 Analiza: Jednostavan model koji uzima ime tima kao osnovu za scoring.</p>
-            </div>
-            """, unsafe_allow_html=True)
+        matches = get_matches()
+        if not matches:
+            st.warning("Nema mečeva trenutno.")
+        else:
+            # Prikaz svih mečeva
+            for m in matches:
+                data = analyze_match(m)
+                st.markdown(f"""
+                <div class="report-card">
+                    <h3>🏟️ {data['home']} - {data['away']}</h3>
+                    <p>🤖 Predviđeni tip: <b>{data['tip']}</b></p>
+                    <p>📊 Verovatnoće:</p>
+                    <ul>
+                        <li>1 → {data['1']}%</li>
+                        <li>X → {data['X']}%</li>
+                        <li>2 → {data['2']}%</li>
+                    </ul>
+                    <p>💡 Analiza: Jednostavan model uzima ime tima kao osnovu za scoring. 
+                    Može se kasnije unaprediti sa formom, golovima i domaćim/away prednostima.</p>
+                </div>
+                """, unsafe_allow_html=True)
