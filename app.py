@@ -1,6 +1,7 @@
 import streamlit as st
-import hashlib
+import requests
 import os
+
 API_KEY = os.getenv("API_KEY")
 # 1. DIZAJN - ULTRA DARK
 st.set_page_config(page_title="BetGen AI Expert", page_icon="⚽", layout="centered")
