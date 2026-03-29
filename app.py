@@ -3,40 +3,42 @@ import requests
 from bs4 import BeautifulSoup
 import hashlib
 
-st.set_page_config(page_title="BetGen AI Live Scraper", page_icon="⚽", layout="centered")
+st.set_page_config(page_title="BetGen AI Live", page_icon="⚽", layout="centered")
 st.title("⚡ BetGen AI - Live analiza mečeva")
 
 # -------------------------
-# 1. Funkcija za scraping live mečeva
+# 1. Funkcija za scraping live mečeva sa Livescore
 # -------------------------
 def get_live_matches():
     try:
-        url = "https://www.livescore.com/football/live/"
+        url = "https://www.livescore.com/football/live/"  # live rezultati
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36"
         }
-        r = requests.get(url, headers=headers)
+        r = requests.get(url, headers=headers, timeout=10)
         soup = BeautifulSoup(r.text, "html.parser")
 
         matches = []
-        # primer: pronađi sve utakmice u tagovima sa timovima
-        # ovo može zavisiti od stranice, trenutno simulacija
+        # Pronađi sve parove timova u tekstu
         for div in soup.find_all("div"):
             text = div.get_text().strip()
             if " - " in text and len(text.split(" - ")) == 2:
                 matches.append(text)
         
-        if not matches:
-            raise Exception("Nema utakmica")
-        
         # ukloni duplikate i uzmi prvih 20
-        return list(dict.fromkeys(matches))[:20]
-    except:
-        st.warning("Ne mogu da povučem live podatke, koristićemo simulirane mečeve.")
-        return [f"Team {i} - Team {i+10}" for i in range(1,21)]
+        matches = list(dict.fromkeys(matches))[:20]
+
+        if not matches:
+            raise Exception("Nema utakmica na stranici")
+        
+        return matches
+
+    except Exception as e:
+        st.warning(f"Ne mogu da povučem live podatke: {e}. Koristimo simulirane mečeve.")
+        return [f"Team {i} - Team {i+10}" for i in range(1, 21)]
 
 # -------------------------
-# 2. Fiksna analiza po meču
+# 2. Fiksna analiza po meču (uvek ista)
 # -------------------------
 def analyze_match(match):
     h = int(hashlib.md5(match.encode()).hexdigest(), 16)
