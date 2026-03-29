@@ -1,67 +1,49 @@
 import streamlit as st
 import requests
-import os
+from bs4 import BeautifulSoup
 import random
 import pandas as pd
 
-# -------------------------
-# 1. Konfiguracija stranice i stil
-# -------------------------
-st.set_page_config(page_title="BetGen AI Pro", page_icon="⚽", layout="wide")
+st.set_page_config(page_title="BetGen AI Google Scraper", page_icon="⚽", layout="centered")
 
-st.markdown("""
-<style>
-.stApp { background-color: #0E1117; color: white; }
-.stButton>button { 
-    background-color: #00FF41; color: black; 
-    font-weight: bold; border-radius: 12px; height: 50px;
-    width: 100%;
-}
-.report-card { 
-    background-color: #1A1C23; padding: 20px; border-radius: 15px; 
-    border-left: 6px solid #00FF41; margin-bottom: 15px;
-}
-</style>
-""", unsafe_allow_html=True)
-
-st.title("⚡ BetGen AI Pro - Više mečeva + Analiza")
+st.title("⚡ BetGen AI - Analiza utakmica sa Google-a")
 
 # -------------------------
-# 2. API ključ iz Secrets
+# 1. Funkcija za scraping utakmica
 # -------------------------
-API_KEY = os.getenv("API_KEY")
-
-# -------------------------
-# 3. Funkcija za povlačenje mečeva
-# -------------------------
-def get_matches():
-    url = "https://api.football-data.org/v4/matches"
-    headers = {"X-Auth-Token": API_KEY}
+def get_google_fixtures():
+    url = "https://www.google.com/search?q=football+fixtures"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36"
+    }
     try:
-        response = requests.get(url, headers=headers)
-        if response.status_code != 200:
-            st.warning(f"API greška: {response.status_code}. Učitavamo simulirane mečeve.")
-            return []
-        data = response.json()
-        return data.get("matches", [])
+        r = requests.get(url, headers=headers)
+        soup = BeautifulSoup(r.text, "html.parser")
+        matches = []
+
+        # Google prikazuje utakmice u divovima sa class="VwiC3b" ili span tagovima, ovo je primer
+        for div in soup.find_all("div"):
+            text = div.get_text().strip()
+            if " - " in text and len(text.split(" - ")) == 2:
+                matches.append(text)
+        # ukloni duplikate i vrati prvih 20
+        return list(dict.fromkeys(matches))[:20]
     except:
-        st.warning("Ne mogu da povučem podatke. Učitavamo simulirane mečeve.")
-        return []
+        st.warning("Ne mogu da povučem listu sa Google-a, koristićemo simulirane mečeve.")
+        return [f"Team {i} - Team {i+1}" for i in range(1,11)]
 
 # -------------------------
-# 4. Napredna analiza meča
+# 2. Funkcija za analizu meča
 # -------------------------
 def analyze_match(match):
-    # Ako API ne daje timove, koristimo simulaciju
-    home = match.get("homeTeam", {}).get("name") or match.get("home") or f"Team {random.randint(1,50)}"
-    away = match.get("awayTeam", {}).get("name") or match.get("away") or f"Team {random.randint(51,100)}"
+    home, away = match.split(" - ")
 
-    # Simulacija forme (poslednjih 5 mečeva)
-    form_home = [random.randint(0,3) for _ in range(5)]  # golovi
+    # simulacija forme
+    form_home = [random.randint(0,3) for _ in range(5)]
     form_away = [random.randint(0,3) for _ in range(5)]
 
-    avg_home = sum(form_home)/5 + random.randint(0,1)  # malo random boost
-    avg_away = sum(form_away)/5 + random.randint(0,1)
+    avg_home = sum(form_home)/5 + random.random()
+    avg_away = sum(form_away)/5 + random.random()
 
     total = avg_home + avg_away
     prob_home = int((avg_home / total) * 100)
@@ -70,17 +52,15 @@ def analyze_match(match):
 
     if prob_home > prob_away:
         tip = "1"
-        analysis = f"{home} su favoriti (pros. golovi: {avg_home:.1f} vs {avg_away:.1f})"
+        analysis = f"{home} favoriti (pros. golovi: {avg_home:.1f} vs {avg_away:.1f})"
     elif prob_away > prob_home:
         tip = "2"
-        analysis = f"{away} su favoriti (pros. golovi: {avg_away:.1f} vs {avg_home:.1f})"
+        analysis = f"{away} favoriti (pros. golovi: {avg_away:.1f} vs {avg_home:.1f})"
     else:
         tip = "X"
-        analysis = "Meč je izjednačen, mogući nerešeni ishod."
+        analysis = "Izjednačeni timovi, mogući nerešeni ishod."
 
     return {
-        "home": home,
-        "away": away,
         "tip": tip,
         "1": prob_home,
         "X": prob_draw,
@@ -89,33 +69,22 @@ def analyze_match(match):
     }
 
 # -------------------------
-# 5. Prikaz mečeva
+# 3. Glavni interfejs
 # -------------------------
-if st.button("Učitaj i analiziraj mečeve 🚀"):
-    matches = get_matches()
+st.subheader("📋 Lista mečeva")
+matches = get_google_fixtures()
 
-    # Ako nema više mečeva, kreiraj simulirane 10
-    if not matches:
-        matches = [{"home": f"Team {i}", "away": f"Team {i+10}"} for i in range(1,11)]
+selected_match = st.selectbox("Izaberi meč za analizu:", matches)
 
-    # Prikaz svakog meča
-    for m in matches:
-        data = analyze_match(m)
-        st.markdown(f"""
-        <div class="report-card">
-            <h3>🏟️ {data['home']} - {data['away']}</h3>
-            <p>🤖 Predviđeni tip: <b>{data['tip']}</b></p>
-            <p>📊 Verovatnoće:</p>
-        </div>
-        """, unsafe_allow_html=True)
+if st.button("Analiziraj meč 🚀"):
+    data = analyze_match(selected_match)
+    st.markdown(f"### 🏟️ {selected_match}")
+    st.markdown(f"**Predviđeni tip:** {data['tip']}")
+    
+    df = pd.DataFrame({
+        "Tip": ["1","X","2"],
+        "Verovatnoća": [data['1'], data['X'], data['2']]
+    })
+    st.bar_chart(df.set_index("Tip"))
 
-        # Bar chart za procente
-        df = pd.DataFrame({
-            "Tip": ["1","X","2"],
-            "Verovatnoća": [data['1'], data['X'], data['2']]
-        })
-        st.bar_chart(df.set_index("Tip"))
-
-        # Analiza
-        st.info(f"💡 Analiza: {data['analysis']}")
-        st.write("---")
+    st.info(f"💡 Analiza: {data['analysis']}")
