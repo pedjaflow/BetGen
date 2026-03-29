@@ -1,44 +1,28 @@
 import streamlit as st
-import requests
-from bs4 import BeautifulSoup
-import random
 import pandas as pd
+import random
 
-st.set_page_config(page_title="BetGen AI Google Scraper", page_icon="⚽", layout="centered")
-
-st.title("⚡ BetGen AI - Analiza utakmica sa Google-a")
-
-# -------------------------
-# 1. Funkcija za scraping utakmica
-# -------------------------
-def get_google_fixtures():
-    url = "https://www.google.com/search?q=football+fixtures"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36"
-    }
-    try:
-        r = requests.get(url, headers=headers)
-        soup = BeautifulSoup(r.text, "html.parser")
-        matches = []
-
-        # Google prikazuje utakmice u divovima sa class="VwiC3b" ili span tagovima, ovo je primer
-        for div in soup.find_all("div"):
-            text = div.get_text().strip()
-            if " - " in text and len(text.split(" - ")) == 2:
-                matches.append(text)
-        # ukloni duplikate i vrati prvih 20
-        return list(dict.fromkeys(matches))[:20]
-    except:
-        st.warning("Ne mogu da povučem listu sa Google-a, koristićemo simulirane mečeve.")
-        return [f"Team {i} - Team {i+1}" for i in range(1,11)]
+st.set_page_config(page_title="BetGen AI", page_icon="⚽", layout="centered")
+st.title("⚡ BetGen AI - Analiza utakmica")
 
 # -------------------------
-# 2. Funkcija za analizu meča
+# 1. Simulirana lista mečeva
+# -------------------------
+matches = [f"Team {i} - Team {i+10}" for i in range(1, 11)]
+st.subheader("📋 Lista mečeva")
+
+selected_match = st.selectbox("Izaberi meč za analizu:", matches)
+
+# -------------------------
+# 2. Funkcija za sigurnu analizu
 # -------------------------
 def analyze_match(match):
+    if not isinstance(match, str) or " - " not in match:
+        match = f"Team {random.randint(1,50)} - Team {random.randint(51,100)}"
+    
     home, away = match.split(" - ")
 
-    # simulacija forme
+    # simulacija forme poslednjih 5 mečeva
     form_home = [random.randint(0,3) for _ in range(5)]
     form_away = [random.randint(0,3) for _ in range(5)]
 
@@ -61,6 +45,8 @@ def analyze_match(match):
         analysis = "Izjednačeni timovi, mogući nerešeni ishod."
 
     return {
+        "home": home,
+        "away": away,
         "tip": tip,
         "1": prob_home,
         "X": prob_draw,
@@ -69,13 +55,8 @@ def analyze_match(match):
     }
 
 # -------------------------
-# 3. Glavni interfejs
+# 3. Dugme za analizu
 # -------------------------
-st.subheader("📋 Lista mečeva")
-matches = get_google_fixtures()
-
-selected_match = st.selectbox("Izaberi meč za analizu:", matches)
-
 if st.button("Analiziraj meč 🚀"):
     data = analyze_match(selected_match)
     st.markdown(f"### 🏟️ {selected_match}")
